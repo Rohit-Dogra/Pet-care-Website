@@ -1,282 +1,802 @@
 <!DOCTYPE html>
-<html>
-<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
-
+<html lang="en">
 <head>
-    <title>Payment Gateway Integration </title>
-    <link rel="icon" href="images/pay/dollar.png" type="image/png" sizes="16x16">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <script type="application/x-javascript">
-        addEventListener("load", function() {
-            setTimeout(hideURLbar, 0);
-        }, false);
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SecurePay — Payment Gateway</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        function hideURLbar() {
-            window.scrollTo(0, 1);
-        }
-    </script>
-    <link href="css/payment.css" rel="stylesheet" type="text/css" media="all" />
-    <link href='http://fonts.googleapis.com/css?family=Fugaz+One' rel='stylesheet' type='text/css'>
-    <link href='http://fonts.googleapis.com/css?family=Alegreya+Sans:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic,800,800italic,900,900italic' rel='stylesheet' type='text/css'>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
-    <script type="text/javascript" src="css/jquery.min.js"></script>
+  :root {
+    --ink: #0e0e12;
+    --surface: #f5f3ef;
+    --card: #ffffff;
+    --accent: #2a52e8;
+    --accent-soft: #e8ecfc;
+    --muted: #8a8898;
+    --border: #e2e0dc;
+    --success: #18a87a;
+    --shadow: 0 2px 8px rgba(14,14,18,0.06), 0 16px 40px rgba(14,14,18,0.08);
+    --radius: 16px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--surface);
+    font-family: 'Instrument Sans', sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: 24px;
+    background-image:
+      radial-gradient(ellipse 60% 50% at 80% 10%, rgba(42,82,232,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 10% 90%, rgba(24,168,122,0.06) 0%, transparent 60%);
+  }
+
+  /* ── CARD ─────────────────────────────────────── */
+  .pay-card {
+    background: var(--card);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+    animation: rise 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── HEADER ───────────────────────────────────── */
+  .pay-header {
+    padding: 32px 32px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .pay-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pay-brand-icon {
+    width: 36px; height: 36px;
+    background: var(--ink);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+  }
+
+  .pay-brand-icon svg { width: 18px; height: 18px; }
+
+  .pay-brand-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+  }
+
+  .pay-secure {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--success);
+    background: #e6f7f2;
+    padding: 4px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.3px;
+  }
+
+  .pay-secure svg { width: 11px; height: 11px; }
+
+  /* ── AMOUNT DISPLAY ───────────────────────────── */
+  .amount-display {
+    padding: 28px 32px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .amount-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .amount-input-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .amount-currency {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--muted);
+  }
+
+  .amount-field {
+    font-family: 'DM Mono', monospace;
+    font-size: 36px;
+    font-weight: 400;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+    width: 100%;
+    letter-spacing: -1px;
+  }
+
+  .amount-field::placeholder { color: #ccc; }
+
+  /* ── TABS ─────────────────────────────────────── */
+  .tab-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 14px 4px 12px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: color 0.2s, border-color 0.2s;
+    position: relative;
+    top: 1px;
+  }
+
+  .tab-btn svg { width: 18px; height: 18px; transition: transform 0.2s; }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn:hover svg { transform: scale(1.1); }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── TAB PANELS ───────────────────────────────── */
+  .tab-panels { padding: 28px 32px 32px; }
+
+  .tab-panel {
+    display: none;
+    animation: fadeIn 0.25s ease both;
+  }
+
+  .tab-panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── FIELD ────────────────────────────────────── */
+  .field { margin-bottom: 16px; }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+
+  .field-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .field-input:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+
+  .field-input.mono {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    letter-spacing: 2px;
+  }
+
+  /* ── ROW ──────────────────────────────────────── */
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* ── CARD VISUAL ──────────────────────────────── */
+  .card-visual {
+    width: 100%;
+    height: 140px;
+    background: linear-gradient(135deg, #0e0e12 0%, #2a52e8 100%);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .card-visual::before {
+    content: '';
+    position: absolute;
+    width: 180px; height: 180px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+    top: -60px; right: -40px;
+  }
+
+  .card-visual::after {
+    content: '';
+    position: absolute;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+    bottom: -30px; left: 40px;
+  }
+
+  .card-chip {
+    width: 32px; height: 24px;
+    background: linear-gradient(135deg, #d4a843, #f0c860);
+    border-radius: 5px;
+  }
+
+  .card-number-display {
+    font-family: 'DM Mono', monospace;
+    color: rgba(255,255,255,0.9);
+    font-size: 15px;
+    letter-spacing: 3px;
+  }
+
+  .card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .card-holder-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .card-exp {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* ── SUBMIT BUTTON ────────────────────────────── */
+  .pay-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+
+  .pay-btn:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(42,82,232,0.35);
+  }
+
+  .pay-btn:active { transform: translateY(0); }
+
+  /* ── NET BANKING ──────────────────────────────── */
+  .bank-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-bottom: 4px;
+  }
+
+  .bank-grid::-webkit-scrollbar { width: 4px; }
+  .bank-grid::-webkit-scrollbar-track { background: transparent; }
+  .bank-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .bank-option input[type="radio"] { display: none; }
+
+  .bank-option label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .bank-option label::before {
+    content: '';
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .bank-option input:checked + label {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .bank-option input:checked + label::before {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* ── PAYPAL ───────────────────────────────────── */
+  .paypal-logo {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-bottom: 20px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+  }
+
+  .paypal-logo span:first-child { color: #003087; }
+  .paypal-logo span:last-child { color: #009cde; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+
+  .remember-row label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .remember-row input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px; height: 14px;
+  }
+
+  .forgot-link {
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .forgot-link:hover { text-decoration: underline; }
+
+  /* ── FOOTER ───────────────────────────────────── */
+  .pay-footer {
+    padding: 16px 32px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .pay-footer-text {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .pay-schemes {
+    display: flex;
+    gap: 8px;
+  }
+
+  .scheme-badge {
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+  }
+
+  /* ── SUCCESS OVERLAY ──────────────────────────── */
+  .success-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(14,14,18,0.5);
+    backdrop-filter: blur(8px);
+    display: none;
+    place-items: center;
+    z-index: 100;
+    padding: 24px;
+  }
+
+  .success-overlay.show { display: grid; }
+
+  .success-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 48px 40px;
+    text-align: center;
+    max-width: 340px;
+    width: 100%;
+    animation: rise 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  .success-icon {
+    width: 64px; height: 64px;
+    background: #e6f7f2;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 20px;
+  }
+
+  .success-icon svg { width: 28px; height: 28px; color: var(--success); }
+
+  .success-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    margin-bottom: 8px;
+  }
+
+  .success-sub {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .success-close {
+    padding: 12px 32px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .success-close:hover { background: var(--accent); }
+</style>
 </head>
-
 <body>
-    <script src='../../../../ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
-    <script src="../../../../m.servedby-buysellads.com/monetization.js" type="text/javascript"></script>
-    <script>
-        (function() {
-            if (typeof _bsa !== 'undefined' && _bsa) {
-                // format, zoneKey, segment:value, options
-                _bsa.init('flexbar', 'CKYI627U', 'placement:w3layoutscom');
-            }
-        })();
-    </script>
-    <script>
-        (function() {
-            if (typeof _bsa !== 'undefined' && _bsa) {
-                // format, zoneKey, segment:value, options
-                _bsa.init('fancybar', 'CKYDL2JN', 'placement:demo');
-            }
-        })();
-    </script>
-    <script>
-        (function() {
-            if (typeof _bsa !== 'undefined' && _bsa) {
-                // format, zoneKey, segment:value, options
-                _bsa.init('stickybox', 'CKYI653J', 'placement:w3layoutscom');
-            }
-        })();
-    </script>
-    <script>
-        window.ga = window.ga || function() {
-            (ga.q = ga.q || []).push(arguments)
-        };
-        ga.l = +new Date;
-        ga('create', 'UA-149859901-1', 'demo.w3layouts.com');
-        ga('require', 'eventTracker');
-        ga('require', 'outboundLinkTracker');
-        ga('require', 'urlChangeTracker');
-        ga('send', 'pageview');
-    </script>
-    <script async src='../../../js/autotrack.js'></script>
-    <meta name="robots" content="noindex">
-    <body>
-        <link rel="stylesheet" href="../../../images/demobar_w3_4thDec2019.css">
-        <!-- Demo bar start -->
-        <div id="w3lDemoBar" class="w3l-demo-bar">
-            <div class="main">
-                <div class="content">
-                    <script src="css/easyResponsiveTabs.js" type="text/javascript"></script>
-                    <script type="text/javascript">
-                        $(document).ready(function() {
-                            $('#horizontalTab').easyResponsiveTabs({
-                                type: 'default', //Types: default, vertical, accordion           
-                                width: 'auto', //auto or any width like 600px
-                                fit: true // 100% fit in a container
-                            });
-                        });
-                    </script>
-                    <div class="sap_tabs">
-                        <div id="horizontalTab" style="display: block; width: 100%; margin: 0px;">
-                            <div class="pay-tabs">
-                                <h2>Select Payment Method</h2>
-                                <ul class="resp-tabs-list">
-                                    <li class="resp-tab-item" aria-controls="tab_item-0" role="tab"><span><label class="pic1"></label> Credit Card </span></li>
-                                    <li class="resp-tab-item" aria-controls="tab_item-1" role="tab"><span><label class="pic3"></label> Net Banking </span></li>
-                                    <li class="resp-tab-item" aria-controls="tab_item-2" role="tab"><span><label class="pic4"></label>PayPal</span></li>
-                                    <li class="resp-tab-item" aria-controls="tab_item-3" role="tab"><span><label class="pic2"></label>Debit Card</span></li>
-                                    <div class="clear"></div>
-                                </ul>
-                            </div>
-                            <div class="resp-tabs-container">
-                                <div class="tab-1 resp-tab-content" aria-labelledby="tab_item-0">
-                                    <div class="payment-info">
-                                        <h3 class="pay-title">Credit Card Info</h3>
-                                        <form>
-                                            <div class="tab-for">
-                                                <h5>Amount</h5>
-                                                <input class="pay-logo" type="text" value="₹.00" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = '₹.00';}" required="">
-                                            </div>
-                                            <div class="tab-for">
-                                                <h5>NAME ON CARD</h5>
-                                                 <input class="pay-logo" type="text" value="Enter the name" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Enter the name';}" required="">
-                                                <h5>CARD NUMBER</h5>
-                                                <input class="pay-logo" type="text" value="0000-0000-0000-0000" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = '0000-0000-0000-0000';}" required="">
-                                            </div>
-                                            <div class="transaction">
-                                                <div class="tab-form-left user-form">
-                                                    <h5>EXPIRATION</h5>
-                                                    <ul>
-                                                        <li>
-                                                            <input type="number" class="text_box" type="text" value="0" min="1" />
-                                                        </li>
-                                                        <li>
-                                                            <input type="number" class="text_box" type="text" value="2000" min="1" />
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                                <div class="tab-form-right user-form-rt">
-                                                    <h5>CVV NUMBER</h5>
-                                                    <input type="password" value="xxx" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'xxx';}" required="">
-                                                </div>
-                                                <div class="clear"></div>
-                                            </div>
-                                            <a class="confirm-btn" href="succes.html">SEND</a>
-                                        </form>
-                                    </div>
-                                </div>
-                                <div class="tab-1 resp-tab-content" aria-labelledby="tab_item-1">
-                                    <div class="payment-info">
-                                        <h3>Net Banking</h3>
-                                        <div class="radio-btns">
-                                            <div class="swit">
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio" checked=""><i></i> Andhra Bank </label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Allahabad Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Bank of Baroda</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Canara Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>IDBI Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>ICICI Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Indian Overseas Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Punjab National Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>South Indian Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>State Bank Of India</label> </div>
-                                                </div>
-                                            </div>
-                                            <div class="swit">
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio" checked=""><i></i>City Union Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>HDFC Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>IndusInd Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Syndicate Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Deutsche Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Corporation Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>UCO Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Indian Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>Federal Bank</label> </div>
-                                                </div>
-                                                <div class="check_box">
-                                                    <div class="radio"> <label><input type="radio" name="radio"><i></i>ING Vysya Bank</label> </div>
-                                                </div>
-                                            </div>
-                                            <div class="clear"></div>
-                                        </div>
-                                        <a class="confirm-btn" href="succes.html">CONTINUE</a>
-                                    </div>
-                                </div>
-                                <div class="tab-1 resp-tab-content" aria-labelledby="tab_item-2">
-                                    <div class="payment-info">
-                                        <h3>PayPal</h3>
-                                        <h4>Already Have A PayPal Account?</h4>
-                                        <div class="login-tab">
-                                            <div class="user-login">
-                                                <h2>Login</h2>
 
-                                                <form>
-                                                    <input type="text" value="name@email.com" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'name@email.com';}" required="">
-                                                    <input type="password" value="PASSWORD" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'PASSWORD';}" required="">
-                                                    <div class="user-grids">
-                                                        <div class="user-left">
-                                                            <div class="single-bottom">
-                                                                <ul>
-                                                                    <li>
-                                                                        <input type="checkbox" id="brand1" value="">
-                                                                        <label for="brand1"><span></span>Remember me?</label>
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-                                                        </div>
-                                                        <div class="user-right">
-                                                            <input type="submit" value="LOGIN">
-                                                        </div>
-                                                        <div class="clear"></div>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="tab-1 resp-tab-content" aria-labelledby="tab_item-3">
-                                    <div class="payment-info">
+<div class="pay-card">
+  <!-- Header -->
+  <div class="pay-header">
+    <div class="pay-brand">
+      <div class="pay-brand-icon">
+        <svg fill="none" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="5" width="16" height="11" rx="2" stroke="white" stroke-width="1.5"/>
+          <path d="M1 8h16" stroke="white" stroke-width="1.5"/>
+          <rect x="3" y="11" width="4" height="2" rx="1" fill="white"/>
+        </svg>
+      </div>
+      <span class="pay-brand-name">SecurePay</span>
+    </div>
+    <div class="pay-secure">
+      <svg fill="none" viewBox="0 0 12 12"><path d="M6 1L2 2.5V6c0 2.2 1.7 4.2 4 4.7C9.3 10.2 11 8.2 11 6V2.5L6 1z" fill="currentColor"/></svg>
+      SSL Secured
+    </div>
+  </div>
 
-                                        <h3 class="pay-title">Debit Card Info</h3>
-                                        <form>
-                                            <div class="tab-for">
-                                                <div class="tab-for">
-                                                    <h5>Amount</h5>
-                                                    <input class="pay-logo" type="text" value="₹.00" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = '₹.00';}" required="">
-                                                </div>
-                                                <h5>NAME ON CARD</h5>
-                                                <input class="pay-logo" type="text" value="Enter the name" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Enter the name';}" required="">
-                                                <h5>CARD NUMBER</h5>
-                                                <input class="pay-logo" type="text" value="0000-0000-0000-0000" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = '0000-0000-0000-0000';}" required="">
-                                            </div>
-                                            <div class="transaction">
-                                                <div class="tab-form-left user-form">
-                                                    <h5>EXPIRATION</h5>
-                                                    <ul>
-                                                        <li>
-                                                            <input type="number" class="text_box" type="text" value="6" min="1" />
-                                                        </li>
-                                                        <li>
-                                                            <input type="number" class="text_box" type="text" value="1988" min="1" />
-                                                        </li>
+  <!-- Amount -->
+  <div class="amount-display">
+    <div class="amount-label">Total Amount</div>
+    <div class="amount-input-wrap">
+      <span class="amount-currency">₹</span>
+      <input class="amount-field" type="text" placeholder="0.00" id="globalAmount"/>
+    </div>
+  </div>
 
-                                                    </ul>
-                                                </div>
-                                                <div class="tab-form-right user-form-rt">
-                                                    <h5>CVV NUMBER</h5>
-                                                    <input type="password" value="xxx" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'xxx';}" required="">
-                                                </div>
-                                                <div class="clear"></div>
-                                            </div>
-                                            <a class="confirm-btn" href="succes.html">SEND</a>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <!-- Tabs -->
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="credit">
+      <svg fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+        <rect x="2" y="5" width="16" height="12" rx="2"/>
+        <path d="M2 9h16"/>
+        <path d="M5 13h3" stroke-linecap="round"/>
+      </svg>
+      Credit
+    </button>
+    <button class="tab-btn" data-tab="debit">
+      <svg fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+        <rect x="2" y="5" width="16" height="12" rx="2"/>
+        <path d="M2 9h16"/>
+        <circle cx="14" cy="13" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+      Debit
+    </button>
+    <button class="tab-btn" data-tab="netbank">
+      <svg fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+        <path d="M3 8l7-5 7 5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="5" y="9" width="3" height="6" rx="0.5"/>
+        <rect x="9" y="9" width="3" height="6" rx="0.5"/>
+        <rect x="13" y="9" width="3" height="6" rx="0.5"/>
+        <path d="M2 15h16" stroke-linecap="round"/>
+      </svg>
+      Net Bank
+    </button>
+    <button class="tab-btn" data-tab="paypal">
+      <svg fill="none" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6">
+        <path d="M7 4h5a4 4 0 010 8H9l-1 4H5l3-12z" stroke-linejoin="round"/>
+      </svg>
+      PayPal
+    </button>
+  </div>
+
+  <!-- Panels -->
+  <div class="tab-panels">
+
+    <!-- Credit Card -->
+    <div class="tab-panel active" id="panel-credit">
+      <div class="card-visual" id="cardVisual">
+        <div class="card-chip"></div>
+        <div class="card-number-display" id="displayNumber">•••• •••• •••• ••••</div>
+        <div class="card-bottom">
+          <div>
+            <div class="card-holder-name" id="displayName">YOUR NAME</div>
+            <div class="card-exp" id="displayExp">MM / YYYY</div>
+          </div>
         </div>
-    </body>
+      </div>
+      <div class="field">
+        <label class="field-label">Name on Card</label>
+        <input class="field-input" type="text" placeholder="John Doe" id="cardName" oninput="updateDisplay()"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Card Number</label>
+        <input class="field-input mono" type="text" placeholder="0000  0000  0000  0000" maxlength="19" id="cardNum" oninput="formatCard(this); updateDisplay()"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Expiration</label>
+          <input class="field-input mono" type="text" placeholder="MM / YY" maxlength="7" id="cardExp" oninput="formatExp(this); updateDisplay()"/>
+        </div>
+        <div class="field">
+          <label class="field-label">CVV</label>
+          <input class="field-input mono" type="password" placeholder="•••" maxlength="4" id="cardCvv"/>
+        </div>
+      </div>
+      <button class="pay-btn" onclick="showSuccess()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Pay Now
+      </button>
+    </div>
+
+    <!-- Debit Card -->
+    <div class="tab-panel" id="panel-debit">
+      <div class="card-visual" style="background: linear-gradient(135deg, #0a3d2e 0%, #18a87a 100%);">
+        <div class="card-chip"></div>
+        <div class="card-number-display">•••• •••• •••• ••••</div>
+        <div class="card-bottom">
+          <div>
+            <div class="card-holder-name">YOUR NAME</div>
+            <div class="card-exp">MM / YYYY</div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Name on Card</label>
+        <input class="field-input" type="text" placeholder="John Doe"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Card Number</label>
+        <input class="field-input mono" type="text" placeholder="0000  0000  0000  0000" maxlength="19" oninput="formatCard(this)"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Expiration</label>
+          <input class="field-input mono" type="text" placeholder="MM / YY" maxlength="7" oninput="formatExp(this)"/>
+        </div>
+        <div class="field">
+          <label class="field-label">CVV</label>
+          <input class="field-input mono" type="password" placeholder="•••" maxlength="4"/>
+        </div>
+      </div>
+      <button class="pay-btn" onclick="showSuccess()" style="margin-top:20px">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Pay Now
+      </button>
+    </div>
+
+    <!-- Net Banking -->
+    <div class="tab-panel" id="panel-netbank">
+      <div class="bank-grid">
+        <!-- Bank options -->
+        <div class="bank-option"><input type="radio" name="bank" id="b1" checked><label for="b1">State Bank of India</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b2"><label for="b2">HDFC Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b3"><label for="b3">ICICI Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b4"><label for="b4">Axis Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b5"><label for="b5">Punjab National</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b6"><label for="b6">Bank of Baroda</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b7"><label for="b7">Canara Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b8"><label for="b8">IndusInd Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b9"><label for="b9">Kotak Mahindra</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b10"><label for="b10">Federal Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b11"><label for="b11">IDBI Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b12"><label for="b12">UCO Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b13"><label for="b13">South Indian Bank</label></div>
+        <div class="bank-option"><input type="radio" name="bank" id="b14"><label for="b14">Yes Bank</label></div>
+      </div>
+      <button class="pay-btn" onclick="showSuccess()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" stroke-width="2"><path d="M8 2v8M8 10l-3-3M8 10l3-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Continue to Bank
+      </button>
+    </div>
+
+    <!-- PayPal -->
+    <div class="tab-panel" id="panel-paypal">
+      <div class="paypal-logo">
+        <span>Pay</span><span>Pal</span>
+      </div>
+      <div class="field">
+        <label class="field-label">Email Address</label>
+        <input class="field-input" type="email" placeholder="name@email.com"/>
+      </div>
+      <div class="field">
+        <label class="field-label">Password</label>
+        <input class="field-input" type="password" placeholder="Enter your password"/>
+      </div>
+      <div class="remember-row">
+        <label>
+          <input type="checkbox" checked/>
+          Keep me logged in
+        </label>
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+      <button class="pay-btn" onclick="showSuccess()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Login &amp; Pay
+      </button>
+    </div>
+
+  </div><!-- end panels -->
+
+  <!-- Footer -->
+  <div class="pay-footer">
+    <span class="pay-footer-text">Secured by 256-bit SSL</span>
+    <div class="pay-schemes">
+      <span class="scheme-badge">VISA</span>
+      <span class="scheme-badge">MC</span>
+      <span class="scheme-badge">RUPAY</span>
+      <span class="scheme-badge">UPI</span>
+    </div>
+  </div>
+</div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg fill="none" viewBox="0 0 28 28" stroke="currentColor" stroke-width="2.5">
+        <path d="M5 14l6 6L23 8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="success-title">Payment Successful</div>
+    <div class="success-sub">Your transaction has been processed securely. A confirmation will be sent to your email.</div>
+    <button class="success-close" onclick="closeSuccess()">Done</button>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Card number formatting
+  function formatCard(input) {
+    let v = input.value.replace(/\D/g,'').substring(0,16);
+    input.value = v.replace(/(\d{4})(?=\d)/g,'$1  ');
+  }
+
+  // Expiry formatting
+  function formatExp(input) {
+    let v = input.value.replace(/\D/g,'');
+    if (v.length >= 2) v = v.substring(0,2) + ' / ' + v.substring(2,4);
+    input.value = v;
+  }
+
+  // Live card visual update
+  function updateDisplay() {
+    const num = document.getElementById('cardNum').value.trim() || '•••• •••• •••• ••••';
+    const name = document.getElementById('cardName').value.trim().toUpperCase() || 'YOUR NAME';
+    const exp = document.getElementById('cardExp').value.trim() || 'MM / YYYY';
+    document.getElementById('displayNumber').textContent = num.length > 3 ? num : '•••• •••• •••• ••••';
+    document.getElementById('displayName').textContent = name;
+    document.getElementById('displayExp').textContent = exp;
+  }
+
+  // Success state
+  function showSuccess() {
+    document.getElementById('successOverlay').classList.add('show');
+  }
+  function closeSuccess() {
+    document.getElementById('successOverlay').classList.remove('show');
+  }
+</script>
 </body>
 </html>
